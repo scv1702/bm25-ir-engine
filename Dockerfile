@@ -6,7 +6,4 @@ RUN apt-get update && apt-get install -y g++ default-jdk
 
 RUN pip3 install -r requirements.txt
 
-# RUN touch /usr/local/etc/mecabrc
-# RUN touch /usr/local/lib/mecab/dic/mecab-ko-dic/dicrc
-
 CMD [ "python3", "main.py" ]

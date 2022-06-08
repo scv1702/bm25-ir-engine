@@ -1,53 +1,55 @@
-from rank_bm25 import BM25Okapi
-from konlpy.tag import Hannanum
+from konlpy.tag import Okt
+from bm25 import cal_tf_idf, preprocess, bm25_scores
 
-hannanum = Hannanum()
-contents = list()
-tokenized_contents = list()
-titles = list()
+corpus = [0] * 100
+titles = [0] * 100
+contents = [0] * 100
+terms = list()
+okt = Okt()
 
-# preprocess corpus
 with open("corpus.txt", "r") as f:
     line = f.readline()
+    docId = 0
     while line:
         # preprocess title
         title = line.replace("<title>","").replace("</title>","").replace("\n","")
         title = title[title.find(".")+2:]
-        titles.append(title)
-        
         # preprocess content
         content = f.readline()
-        tokenized_content = hannanum.morphs(content)
-
-        # save the preprocessed document to corpus
-        contents.append(content)
-        tokenized_contents.append(tokenized_content)
-
+        preprocessed_content = preprocess(content, okt)
+        titles[docId] = title
+        contents[docId] = content
+        corpus[docId] = preprocessed_content
+        temp = list()
+        for token in preprocessed_content:
+            if token not in terms:
+                temp.append(token)
+        terms += temp
         # read space
         _ = f.readline()
-
         # read next title
         line = f.readline()
+        docId += 1
 
-# tokenize corpus
-bm25 = BM25Okapi(tokenized_contents)
+terms.sort()
+
+tf_list, idf_list = cal_tf_idf(terms, corpus)
 
 # get query
 print("Query: ", end="")
 query = input()
 
-# tokenize query
-tokenized_query = hannanum.morphs(query)
-
-# caclulate tf-idf scores between query and corpus
-doc_scores = bm25.get_scores(tokenized_query)
-
-# get top 5 documents
-top_5_doc_ids = sorted(range(len(doc_scores)), key=lambda i: doc_scores[i])[-5:]
-top_5_doc_ids.reverse()
-
-# print top 5 documents
-for doc_id in top_5_doc_ids:
-    print(f"DocId: {doc_id + 1} Score: {doc_scores[doc_id]}")
-    print(titles[doc_id])
-    print(contents[doc_id])
+while query != "종료":
+    # calculate cosine_similarity between query and documents
+    preprocessed_query = preprocess(query, okt)
+    scores = bm25_scores(preprocessed_query, corpus, terms, tf_list, idf_list)
+    top_5_docId = sorted(range(len(scores)), key=lambda i: scores[i])[-5:]
+    top_5_docId.reverse()
+    # print top 5 documents
+    for docId in top_5_docId:
+        print(f"DocId: {docId + 1} Score: {scores[docId]}")
+        print(titles[docId])
+        print(contents[docId])
+    # get query
+    print("Query: ", end="")
+    query = input()

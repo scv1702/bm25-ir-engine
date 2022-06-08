@@ -1,3 +1,2 @@
-pororo
-rank_bm25
 konlpy
+numpy
